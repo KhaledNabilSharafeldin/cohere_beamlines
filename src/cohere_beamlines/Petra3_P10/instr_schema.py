@@ -5,18 +5,13 @@ Quirks:
     so SPEC_DRIVERS includes 'sample'.
   - Spec keys 'del' and 'gam' are the fio mnemonics for delta and gamma
     (matches detectoraxes_mne in diffractometers.py).
-  - diffractometer / detector choices are declared explicitly: the
-    diffractometers.py module imports hdf5plugin (optional dep), so
-    auto-introspection would fail on hosts without it.
+  - detector choices are declared explicitly rather than via
+    auto_choices='detector': the detectors.py module imports hdf5plugin
+    (optional dep), so auto-introspection would fail on hosts without it.
 """
 
 INSTR_FIELDS = {
     'general': [
-        {
-            'key': 'diffractometer', 'label': 'diffractometer',
-            'type': 'choice', 'choices': ['P10sixc'],
-            'description': 'Diffractometer model used for this experiment.',
-        },
         {
             'key': 'data_dir', 'label': 'data directory', 'type': 'dir',
             'description': 'Directory containing the raw detector frames and metadata.',
@@ -53,13 +48,10 @@ INSTR_FIELDS = {
          'choices': ['mu', 'om', 'chi', 'phi'],
          'description': 'Motor that defines the scan steps. Pick a listed '
                         'motor or use (custom...) to type a different name.'},
-        {'key': 'scanmot_del', 'label': 'scan motor step', 'unit': 'deg',
-         'type': 'float',
-         'description': 'Step size between scan frames.'},
         {'key': 'detector', 'label': 'detector',
          'type': 'choice', 'choices': ['e4m', 'e2500'],
          'description': 'Detector hardware used for this experiment.'},
     ],
 }
 
-SPEC_DRIVERS = ('data_dir', 'diffractometer', 'sample')
+SPEC_DRIVERS = ('data_dir', 'sample')

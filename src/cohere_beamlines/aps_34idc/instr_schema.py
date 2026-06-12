@@ -6,15 +6,15 @@ instrument form. Two top-level objects must be exported:
 
   INSTR_FIELDS = {
       'general': [<field>, ...],   # user-managed; never overwritten by spec parse
-      'spec':    [<field>, ...],   # auto-populated by diffractometers.parse_metadata
+      'spec':    [<field>, ...],   # auto-populated by the Instrument's parse_metadata
   }
   SPEC_DRIVERS = (<key>, ...)       # general-section keys whose change re-parses spec
 
 Each <field> is a dict; the recognised keys are:
 
   key          (str, required)  the config_<name> key written to conf/config_instr.
-                                 MUST match what create_diffractometer() reads from
-                                 its `params` dict OR what parse_metadata() emits.
+                                 MUST match what the beamline Instrument reads from
+                                 config_instr OR what parse_metadata() emits.
   label        (str, required)  human-readable label shown in the form
   type         (str)            one of 'text' (default) | 'bool' | 'choice' |
                                  'dir' | 'file' | 'float' | 'int'
@@ -28,16 +28,19 @@ Each <field> is a dict; the recognised keys are:
                                  and the GUI saves 'key'). For scan motors the
                                  saved key MUST match what parse_metadata()
                                  puts into spec_dict['scanmot'].
-  auto_choices (str)            'diffractometer' or 'detector' -- introspect
-                                 the beamline's diffractometers.py / detectors.py
-                                 for class .name attributes. Use this when the
-                                 set of valid choices lives in code; declare
-                                 'choices' explicitly when it doesn't.
+  auto_choices (str)            'detector' -- introspect the beamline's
+                                 detectors.py for class .name attributes. Use
+                                 this when the set of valid choices lives in
+                                 code; declare 'choices' explicitly when it
+                                 doesn't. (Note: 'diffractometer' is no longer a
+                                 valid auto_choices source -- the diffractometer
+                                 is now a bare NamedTuple hardcoded per beamline,
+                                 with no .name; it resolves to an empty list.)
 
 SPEC_DRIVERS lists the general-section keys whose value drives spec parsing
-(typically the spec/h5 file path plus 'diffractometer'). When any driver
-field changes, the GUI re-invokes parse_metadata and refreshes every spec
-field with the returned values.
+(typically the spec/h5 file path, e.g. 'specfile' / 'h5file' / 'data_dir').
+When any driver field changes, the GUI re-invokes parse_metadata and refreshes
+every spec field with the returned values.
 
 When adding/renaming a field, verify the key matches diffractometers.py /
 detectors.py exactly. Mismatches don't error, the GUI just silently drops
@@ -46,11 +49,6 @@ the value at save time or never populates the widget.
 
 INSTR_FIELDS = {
     'general': [
-        {
-            'key': 'diffractometer', 'label': 'diffractometer',
-            'type': 'choice', 'auto_choices': 'diffractometer',
-            'description': 'Diffractometer model used for this experiment.',
-        },
         {
             'key': 'specfile', 'label': 'spec file', 'type': 'file',
             'description': 'SPEC log file with the scan metadata.',
@@ -95,13 +93,10 @@ INSTR_FIELDS = {
          'choices': ['th', 'chi', 'phi', 'en'],
          'description': 'Motor that defines the scan steps. Pick a listed '
                         'motor or use (custom...) to type a different name.'},
-        {'key': 'scanmot_del', 'label': 'scan motor step', 'unit': 'deg',
-         'type': 'float',
-         'description': 'Step size between scan frames.'},
         {'key': 'detector', 'label': 'detector',
          'type': 'choice', 'auto_choices': 'detector',
          'description': 'Detector hardware used for this experiment.'},
     ],
 }
 
-SPEC_DRIVERS = ('specfile', 'diffractometer')
+SPEC_DRIVERS = ('specfile',)

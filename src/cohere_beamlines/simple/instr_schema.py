@@ -7,11 +7,6 @@ stays empty and the user fills the general fields by hand.
 INSTR_FIELDS = {
     'general': [
         {
-            'key': 'diffractometer', 'label': 'diffractometer',
-            'type': 'choice', 'auto_choices': 'diffractometer',
-            'description': 'Diffractometer model used for this experiment.',
-        },
-        {
             'key': 'data_dir', 'label': 'data directory', 'type': 'dir',
             'description': 'Directory containing the raw detector frames.',
         },

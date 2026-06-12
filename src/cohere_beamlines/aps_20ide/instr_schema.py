@@ -7,11 +7,6 @@ SPEC_DRIVERS uses 'data_dir' rather than 'specfile'.
 INSTR_FIELDS = {
     'general': [
         {
-            'key': 'diffractometer', 'label': 'diffractometer',
-            'type': 'choice', 'auto_choices': 'diffractometer',
-            'description': 'Diffractometer model used for this experiment.',
-        },
-        {
             'key': 'data_dir', 'label': 'data directory', 'type': 'dir',
             'description': 'Directory containing the raw detector frames and metadata.',
         },
@@ -65,10 +60,7 @@ INSTR_FIELDS = {
          'choices': ['samRy'],
          'description': 'Motor that defines the scan steps. Pick a listed '
                         'motor or use (custom...) to type a different name.'},
-        {'key': 'scanmot_del', 'label': 'scan motor step', 'unit': 'deg',
-         'type': 'float',
-         'description': 'Step size between scan frames.'},
     ],
 }
 
-SPEC_DRIVERS = ('data_dir', 'diffractometer')
+SPEC_DRIVERS = ('data_dir',)
