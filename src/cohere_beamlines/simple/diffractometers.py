@@ -1,12 +1,13 @@
-import numpy as np
-from cohere_beamlines.common.diff import Diffractometer
+from typing import NamedTuple
 
 
-class Diffractometer_simple(Diffractometer):
+class Diffractometer(NamedTuple):
     """
-    Subclass of Diffractometer. Encapsulates any diffractometer. Based on aps_34idc beamline.
+    Encapsulates the "simple" diffractometer. Based on aps_34idc.
+
+    A bare data container of axis conventions; all geometry logic now lives in
+    the Instrument class (see cohere_beamlines.common.instr).
     """
-    name = "simple"
     sampleaxes = ('y+', 'z-', 'y+')  # in xrayutilities notation
     detectoraxes = ('y+', 'x-')
     incidentaxis = (0, 0, 1)
@@ -16,28 +17,3 @@ class Diffractometer_simple(Diffractometer):
     detectoraxes_mne = ('delta', 'gamma')
     detectordist_name = 'camdist'
     detectordist_mne = 'detdist'
-
-
-    def __init__(self, params):
-        super(Diffractometer_simple, self).__init__()
-        self.data_dir = params['data_dir']
-
-
-    def convert_units(self, params):
-        """
-        Converts detectordist value from mm to m.
-        :return:
-        """
-        params[self.detectordist_mne] = params[self.detectordist_mne] / 1000.0  # convert to meters
-        return params
-
-
-    def parse_metadata(self, scan):
-        return {}
-
-
-def create_diffractometer(diff_name, params):
-    if Diffractometer_simple.name == diff_name:
-        return Diffractometer_simple(params)
-    msg = f'diffractometor {diff_name} not defined'
-    raise ValueError(msg)
