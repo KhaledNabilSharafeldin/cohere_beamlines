@@ -6,10 +6,11 @@
 
 import os
 from PyQt6.QtCore import *
-from PyQt56.QtWidgets import *
+from PyQt6.QtWidgets import *
 import ast
 import cohere_core.utilities as ut
-import cohere_beamlines.aps_20ide.diffractometers as diff
+from cohere_beamlines.aps_20ide.diffractometers import Diffractometer
+from cohere_beamlines.aps_20ide.instrument import Instrument_aps_20ide
 from cohere_beamlines.common.det import Detector as det
 
 
@@ -85,6 +86,7 @@ def set_overriden(item):
     -------
     nothing
     """
+    item.setModified(True)
     item.setStyleSheet('color: black')
 
 
@@ -106,12 +108,16 @@ class SubInstrTab():
         spec_layout = QFormLayout()
         self.meta_widget.setLayout(spec_layout)
         self.energy = QLineEdit()
+        self.energy.setModified(False)
         spec_layout.addRow("energy", self.energy)
         self.DetX = QLineEdit()
+        self.DetX.setModified(False)
         spec_layout.addRow("DetX (mm)", self.DetX)
         self.DetY = QLineEdit()
+        self.DetY.setModified(False)
         spec_layout.addRow("DetY (mm)", self.DetY)
         self.DetZ = QLineEdit()
+        self.DetZ.setModified(False)
         spec_layout.addRow("DetZ (mm)", self.DetZ)
 
         self.energy.textChanged.connect(lambda: set_overriden(self.energy))
@@ -131,21 +137,22 @@ class SubInstrTab():
         -------
         nothing
         """
+        def override_item(item, value):
+            item.setText(value)
+            item.setStyleSheet('color: black')
+            item.setModified(True)
+
         self.parse_metadata()
 
         # if parameters are configured, override the readings from spec file
         if 'energy' in conf_map:
-            self.energy.setText(str(conf_map['energy']).replace(" ", ""))
-            self.energy.setStyleSheet('color: black')
+            override_item(self.energy, str(conf_map['energy']).replace(" ", ""))
         if 'DetX' in conf_map:
-            self.DetX.setText(str(conf_map['DetX']).replace(" ", ""))
-            self.DetX.setStyleSheet('color: black')
+            override_item(self.DetX, str(conf_map['DetX']).replace(" ", ""))
         if 'DetY' in conf_map:
-            self.DetY.setText(str(conf_map['DetY']).replace(" ", ""))
-            self.DetY.setStyleSheet('color: black')
+            override_item(self.DetY, str(conf_map['DetY']).replace(" ", ""))
         if 'DetZ' in conf_map:
-            self.DetZ.setText(str(conf_map['DetZ']).replace(" ", ""))
-            self.DetZ.setStyleSheet('color: black')
+            override_item(self.DetZ, str(conf_map['DetZ']).replace(" ", ""))
 
 
     def clear_conf(self):
@@ -167,13 +174,13 @@ class SubInstrTab():
             contains parameters read from window
         """
         conf_map = {}
-        if len(self.energy.text()) > 0:
+        if self.energy.isModified() and len(self.energy.text()) > 0:
             conf_map['energy'] = ast.literal_eval(str(self.energy.text()))
-        if len(self.DetX.text()) > 0:
+        if self.DetX.isModified() and len(self.DetX.text()) > 0:
             conf_map['DetX'] = ast.literal_eval(str(self.DetX.text()))
-        if len(self.DetY.text()) > 0:
+        if self.DetY.isModified() and len(self.DetY.text()) > 0:
             conf_map['DetY'] = ast.literal_eval(str(self.DetY.text()))
-        if len(self.DetZ.text()) > 0:
+        if self.DetZ.isModified() and len(self.DetZ.text()) > 0:
             conf_map['DetZ'] = ast.literal_eval(str(self.DetZ.text()))
 
         return conf_map
@@ -189,6 +196,11 @@ class SubInstrTab():
         -------
         nothing
         """
+        def set_item_parsed(item, value):
+            item.setText(value)
+            item.setModified(False)
+            item.setStyleSheet('color: blue')
+
         if not self.main_window.loaded and not self.main_window.is_exp_set():
             return
         scan = str(self.main_window.scan_widget.text())
@@ -196,38 +208,26 @@ class SubInstrTab():
             msg_window ('cannot parse metadata, scan not defined')
             return
 
-        diffractometer = self.instr_tab.diffractometer.text()
-        if len(diffractometer) == 0:
-            msg_window ('cannot parse metadata, diffractometer not defined')
-            return
-
         data_dir = self.instr_tab.data_dir_button.text()
         if len(data_dir) == 0:
             msg_window ('cannot parse metadata, data_dir not defined')
             return
 
-        try:
-            diff_obj = diff.create_diffractometer(diffractometer, {'data_dir' : data_dir})
-        except Exception as e:
-            msg_window (str(e))
-            return
-
-        last_scan = int(scan.split('-')[-1].split(',')[-1])
-        meta_dict = diff_obj.parse_metadata(last_scan)
+        diff_obj = Diffractometer()
+        instrument = Instrument_aps_20ide(None, diff_obj, None)
+        first_scan = int(scan.split('-')[0].split(',')[0])
+        meta_dict = instrument.parse_metadata(first_scan, data_dir=data_dir)
         if meta_dict is None:
             return
+
         if 'energy' in meta_dict:
-            self.energy.setText(str(meta_dict['energy']))
-            self.energy.setStyleSheet('color: blue')
+            set_item_parsed(self.energy, str(meta_dict['energy']))
         if 'DetX' in meta_dict:
-            self.DetX.setText(str(meta_dict['DetX']))
-            self.DetX.setStyleSheet('color: blue')
+            set_item_parsed(self.DetX, str(meta_dict['DetX']))
         if 'DetY' in meta_dict:
-            self.DetY.setText(str(meta_dict['DetY']))
-            self.DetY.setStyleSheet('color: blue')
+            set_item_parsed(self.DetY, str(meta_dict['DetY']))
         if 'DetZ' in meta_dict:
-            self.DetZ.setText(str(meta_dict['DetZ']))
-            self.DetZ.setStyleSheet('color: blue')
+            set_item_parsed(self.DetZ, str(meta_dict['DetZ']))
 
 
 class InstrTab(QWidget):
@@ -275,8 +275,6 @@ class InstrTab(QWidget):
 
         tab_layout = QVBoxLayout()
         gen_layout = QFormLayout()
-        self.diffractometer = QLineEdit()
-        gen_layout.addRow("diffractometer", self.diffractometer)
         self.data_dir_button = QPushButton()
         gen_layout.addRow("data directory", self.data_dir_button)
         self.dark_file_button = QPushButton()
@@ -287,6 +285,8 @@ class InstrTab(QWidget):
         gen_layout.addRow("Imult", self.Imult)
         self.detector = QLineEdit()
         gen_layout.addRow("detector", self.detector)
+        self.beam_zero = QLineEdit()
+        gen_layout.addRow("beam zero position [x, y]", self.beam_zero)
         self.remove_band_background = None
         detector_layout = QFormLayout()
         self.set_detector_layout(detector_layout)
@@ -329,9 +329,6 @@ class InstrTab(QWidget):
         -------
         nothing
         """
-        if 'diffractometer' in conf_map:
-            diff = str(conf_map['diffractometer']).replace(" ", "")
-            self.diffractometer.setText(diff)
         if 'data_dir' in conf_map:
             if os.path.isdir(conf_map['data_dir']):
                 self.data_dir_button.setStyleSheet("Text-align:left")
@@ -363,6 +360,9 @@ class InstrTab(QWidget):
         if 'detector' in conf_map:
             self.detector.setText(str(conf_map['detector']).replace(" ", ""))
             self.detector.setStyleSheet('color: black')
+        if 'beam_zero' in conf_map:
+            self.beam_zero.setText(str(conf_map['beam_zero']).replace(" ", ""))
+            self.beam_zero.setStyleSheet('color: black')
 
         if self.remove_band_background is not None:
             self.remove_band_background.setChecked('remove_band_background' in conf_map and conf_map['remove_band_background'])
@@ -462,12 +462,12 @@ class InstrTab(QWidget):
 
 
     def clear_conf(self):
-        self.diffractometer.setText('')
         self.data_dir_button.setText('')
         self.dark_file_button.setText('')
         self.white_file_button.setText('')
         self.Imult.setText('')
         self.detector.setText('')
+        self.beam_zero.setText('')
         if self.add_config:
             self.extended.clear_conf()
 
@@ -503,8 +503,6 @@ class InstrTab(QWidget):
             contains parameters read from window
         """
         conf_map = {}
-        if len(self.diffractometer.text()) > 0:
-            conf_map['diffractometer'] = str(self.diffractometer.text())
         if len(self.data_dir_button.text().strip()) > 0:
             conf_map['data_dir'] = str(self.data_dir_button.text()).strip()
         if len(self.dark_file_button.text().strip()) > 0:
@@ -515,6 +513,8 @@ class InstrTab(QWidget):
             conf_map['Imult'] = ast.literal_eval(str(self.Imult.text()).replace(os.linesep,''))
         if len(self.detector.text()) > 0:
             conf_map['detector'] = str(self.detector.text())
+        if len(self.beam_zero.text()) > 0:
+            conf_map['beam_zero'] = ast.literal_eval(str(self.beam_zero.text()).replace(os.linesep,''))
         if self.remove_band_background is not None and self.remove_band_background.isChecked():
             conf_map['remove_band_background'] = ast.literal_eval(str(self.remove_band_background.isChecked()))
             if self.rbb_smooth_sigma.text().strip() != '':

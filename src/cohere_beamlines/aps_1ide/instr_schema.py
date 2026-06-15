@@ -3,11 +3,6 @@
 INSTR_FIELDS = {
     'general': [
         {
-            'key': 'diffractometer', 'label': 'diffractometer',
-            'type': 'choice', 'auto_choices': 'diffractometer',
-            'description': 'Diffractometer model used for this experiment.',
-        },
-        {
             'key': 'specfile', 'label': 'spec file', 'type': 'file',
             'description': 'SPEC log file with the scan metadata.',
         },
@@ -53,9 +48,7 @@ INSTR_FIELDS = {
          'choices': ['aero'],
          'description': 'Motor that defines the scan steps. Pick a listed '
                         'motor or use (custom...) to type a different name.'},
-        {'key': 'scanmot_del', 'label': 'scan motor step', 'type': 'float',
-         'description': 'Step size between scan frames.'},
     ],
 }
 
-SPEC_DRIVERS = ('specfile', 'diffractometer')
+SPEC_DRIVERS = ('specfile',)

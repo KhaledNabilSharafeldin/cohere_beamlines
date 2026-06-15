@@ -8,11 +8,6 @@ INSTR_FIELDS = {
             'description': 'Detector hardware used for this experiment.',
         },
         {
-            'key': 'diffractometer', 'label': 'diffractometer',
-            'type': 'choice', 'auto_choices': 'diffractometer',
-            'description': 'Diffractometer model used for this experiment.',
-        },
-        {
             'key': 'h5file', 'label': 'h5 file', 'type': 'file',
             'description': 'HDF5 file containing the scan data and metadata.',
         },
@@ -32,10 +27,7 @@ INSTR_FIELDS = {
          'choices': ['mu', 'eta', 'phi'],
          'description': 'Motor that defines the scan steps. Pick a listed '
                         'motor or use (custom...) to type a different name.'},
-        {'key': 'scanmot_del', 'label': 'scan motor step', 'unit': 'deg',
-         'type': 'float',
-         'description': 'Step size between scan frames.'},
     ],
 }
 
-SPEC_DRIVERS = ('h5file', 'diffractometer')
+SPEC_DRIVERS = ('h5file',)
